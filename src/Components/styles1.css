@@ -1,0 +1,18 @@
+*{
+
+}
+
+ul {
+  list-style: none; /* Removes bullet points */
+  padding: 0; /* Removes default padding */
+  margin: 0; /* Removes default margin */
+}
+
+ul li {
+  display: inline-block;
+  margin-right: 10px; /* Adds spacing between items */
+}
+
+li:hover{
+  color:black ;
+}
