@@ -10,7 +10,6 @@ function AppContent() {
   const location = useLocation();
 
   useEffect(() => {
-    // Only show transition if path actually changed
     if (location.pathname !== currentPath) {
       setIsTransitioning(true);
       setCurrentPath(location.pathname);

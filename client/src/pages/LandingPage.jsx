@@ -1,14 +1,16 @@
 import { useNavigate } from 'react-router-dom';
+import AnimatedSearchBar from '../components/AnimatedSearchbar.jsx';
 
 function LandingPage() {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-white flex flex-col overflow-hidden relative">
-      {/* Top Navigation Bar */}
+      
       <div className="w-full bg-white px-8 py-6 flex justify-between items-center relative z-20 border-b border-gray-200">
-        {/* Left side - empty for now */}
-        <div className="flex-1"></div>
-        
+        {/* Left side - Search Bar */}
+        <div className="flex-1 flex justify-start">
+        </div>
+
         {/* Center - Fax Now Button */}
         <div className="flex-1 flex justify-center">
           <button 
@@ -17,6 +19,7 @@ function LandingPage() {
           >
             Fax Now
           </button>
+          <AnimatedSearchBar />
         </div>
         
         {/* Right side - Sign In/Sign Up */}
