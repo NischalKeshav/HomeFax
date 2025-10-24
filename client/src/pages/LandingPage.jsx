@@ -1,4 +1,7 @@
+import { useNavigate } from 'react-router-dom';
+
 function LandingPage() {
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-white flex flex-col overflow-hidden relative">
       {/* Top Navigation Bar */}
@@ -8,7 +11,10 @@ function LandingPage() {
         
         {/* Center - Fax Now Button */}
         <div className="flex-1 flex justify-center">
-          <button className="bg-white text-black px-10 py-4 rounded-lg font-bold text-xl border-2 border-black hover:bg-gray-50 transition-colors">
+          <button 
+            onClick={() => navigate('/fax-now')}
+            className="bg-white text-black px-10 py-4 rounded-lg font-bold text-xl border-2 border-black hover:bg-gray-50 transition-colors"
+          >
             Fax Now
           </button>
         </div>
