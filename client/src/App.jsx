@@ -2,6 +2,12 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { useState, useEffect } from 'react';
 import LandingPage from './pages/LandingPage';
 import FaxNowPage from './pages/FaxNowPage';
+import SignUpPage from './pages/SignUpPage';
+import SignInPage from './pages/SignInPage';
+import HomeownerDashboard from './pages/HomeownerDashboard';
+import ContractorDashboard from './pages/ContractorDashboard';
+import AdminDashboard from './pages/AdminDashboard';
+import PropertyPage from './pages/PropertyPage';
 import LoadingAnimation from './components/LoadingAnimation';
 
 function AppContent() {
@@ -29,6 +35,12 @@ function AppContent() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/fax-now" element={<FaxNowPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/signin" element={<SignInPage />} />
+      <Route path="/dashboard/homeowner" element={<HomeownerDashboard />} />
+      <Route path="/dashboard/contractor" element={<ContractorDashboard />} />
+      <Route path="/dashboard/admin" element={<AdminDashboard />} />
+      <Route path="/property/:propertyId" element={<PropertyPage />} />
     </Routes>
   );
 }

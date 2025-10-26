@@ -19,15 +19,21 @@ function LandingPage() {
           </button>
         </div>
         
-        {/* Right side - Sign In/Sign Up */}
-        <div className="flex-1 flex justify-end gap-4">
-          <button className="bg-amber-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-800 transition-colors">
-            Sign In
-          </button>
-          <button className="bg-amber-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-900 transition-colors">
-            Sign Up
-          </button>
-        </div>
+                {/* Right side - Sign In/Sign Up */}
+                <div className="flex-1 flex justify-end gap-4">
+                  <button 
+                    onClick={() => navigate('/signin')}
+                    className="bg-amber-700 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-800 transition-colors"
+                  >
+                    Sign In
+                  </button>
+                  <button 
+                    onClick={() => navigate('/signup')}
+                    className="bg-amber-800 text-white px-8 py-3 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
+                  >
+                    Sign Up
+                  </button>
+                </div>
       </div>
       
       {/* Main Content */}

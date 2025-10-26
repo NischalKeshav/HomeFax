@@ -31,17 +31,22 @@ pool.on('connect', () => {
 // Get all properties (for search)
 app.get('/api/properties', async (req, res) => {
   try {
-    const { search, limit = 10 } = req.query;
+    const { search, limit = 10, owner_id } = req.query;
     
-    let query = 'SELECT * FROM properties WHERE status = $1';
+    let query = 'SELECT p.*, u.name as owner_name FROM properties p LEFT JOIN users u ON p.owner_id = u.id WHERE p.status = $1';
     let params = ['active'];
     
+    if (owner_id) {
+      query += ' AND p.owner_id = $' + (params.length + 1);
+      params.push(owner_id);
+    }
+    
     if (search) {
-      query += ' AND (address ILIKE $2 OR registration_number ILIKE $2)';
+      query += ' AND (p.address ILIKE $' + (params.length + 1) + ' OR p.registration_number ILIKE $' + (params.length + 1) + ')';
       params.push(`%${search}%`);
     }
     
-    query += ' ORDER BY address LIMIT $' + (params.length + 1);
+    query += ' ORDER BY p.address LIMIT $' + (params.length + 1);
     params.push(parseInt(limit));
     
     const result = await pool.query(query, params);
@@ -68,6 +73,81 @@ app.get('/api/properties/:id', async (req, res) => {
     res.json(result.rows[0]);
   } catch (error) {
     console.error('Error fetching property:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get comprehensive property data (for detailed property page)
+app.get('/api/properties/:id/comprehensive', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get basic property info
+    const propertyResult = await pool.query(`
+      SELECT p.*, u.name as owner_name, u.email as owner_email
+      FROM properties p
+      LEFT JOIN users u ON p.owner_id = u.id
+      WHERE p.id = $1
+    `, [id]);
+    
+    if (propertyResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    const property = propertyResult.rows[0];
+
+    // Get property history
+    const historyResult = await pool.query(`
+      SELECT * FROM property_history 
+      WHERE property_id = $1 
+      ORDER BY date_performed DESC
+    `, [id]);
+
+    // Get ongoing tasks
+    const tasksResult = await pool.query(`
+      SELECT ot.*, u.name as contractor_name
+      FROM ongoing_tasks ot
+      LEFT JOIN users u ON ot.contractor_id = u.id
+      WHERE ot.property_id = $1 
+      ORDER BY ot.created_at DESC
+    `, [id]);
+
+    // Get parts inventory
+    const partsResult = await pool.query(`
+      SELECT * FROM parts_inventory 
+      WHERE property_id = $1 
+      ORDER BY part_type, part_name
+    `, [id]);
+
+    // Get maintenance checklist
+    const maintenanceResult = await pool.query(`
+      SELECT * FROM maintenance_checklist 
+      WHERE property_id = $1 
+      ORDER BY next_due ASC
+    `, [id]);
+
+    // Get 3D models
+    const modelsResult = await pool.query(`
+      SELECT pm.*, u.name as created_by_name
+      FROM property_3d_models pm
+      LEFT JOIN users u ON pm.created_by = u.id
+      WHERE pm.property_id = $1 
+      ORDER BY pm.created_at DESC
+    `, [id]);
+
+    // Combine all data
+    const comprehensiveProperty = {
+      ...property,
+      history: historyResult.rows,
+      ongoingTasks: tasksResult.rows,
+      partsInventory: partsResult.rows,
+      maintenanceChecklist: maintenanceResult.rows,
+      models3D: modelsResult.rows
+    };
+
+    res.json(comprehensiveProperty);
+  } catch (error) {
+    console.error('Error fetching comprehensive property data:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -214,10 +294,11 @@ app.post('/api/auth/register', async (req, res) => {
     }
 
     if (role === 'homeowner') {
-      // Check if homeowner name exists in properties
+      // Check if homeowner name exists in properties (properties with NULL owner_id)
+      // Use more flexible matching - check if the name appears anywhere in the address
       const propertyResult = await pool.query(
-        'SELECT properties.id FROM properties JOIN users ON properties.owner_id = users.id WHERE users.name ILIKE $1',
-        [`%${name}%`]
+        'SELECT id FROM properties WHERE owner_id IS NULL AND (address ILIKE $1 OR address ILIKE $2)',
+        [`%${name}%`, `%${name.replace(/Mr\.\s*/i, '').replace(/Mrs\.\s*/i, '').replace(/Ms\.\s*/i, '').replace(/Dr\.\s*/i, '')}%`]
       );
       
       if (propertyResult.rows.length === 0) {
@@ -237,6 +318,14 @@ app.post('/api/auth/register', async (req, res) => {
     );
 
     const user = userResult.rows[0];
+
+    // Link properties to homeowner if applicable
+    if (role === 'homeowner') {
+      await pool.query(
+        'UPDATE properties SET owner_id = $1 WHERE owner_id IS NULL AND (address ILIKE $2 OR address ILIKE $3)',
+        [user.id, `%${name}%`, `%${name.replace(/Mr\.\s*/i, '').replace(/Mrs\.\s*/i, '').replace(/Ms\.\s*/i, '').replace(/Dr\.\s*/i, '')}%`]
+      );
+    }
 
     // Mark admin key as used if applicable
     if (role === 'admin') {
