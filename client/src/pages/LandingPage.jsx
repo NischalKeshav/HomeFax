@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import AnimatedSearchBar from '../components/AnimatedSearchbar.jsx';
-
+import HouseShowCase from '../components/HouseShowCase.jsx'
 function LandingPage() {
   const navigate = useNavigate();
   return (
@@ -73,6 +73,7 @@ function LandingPage() {
         <div className="h-2 bg-amber-800 mx-auto rounded-full w-[500px] relative z-10" />
       </div>
       </div>
+    <HouseShowCase/>
     </div>
   );
 }

@@ -69,7 +69,7 @@ const AnimatedSearchBar = () => {
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Search..."
+              placeholder="Search"
               className={`
                 flex-1 bg-transparent border-none outline-none
                 text-white placeholder-gray-500
