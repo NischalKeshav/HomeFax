@@ -37,7 +37,18 @@ function LandingPage() {
       </div>
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center relative">
+      {/* Cover House Background */}
+      <div 
+        className="absolute inset-0 pointer-events-none opacity-70"
+        style={{
+          backgroundImage: 'url(/CoverHouse.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      />
+      
       {/* Blueprint Grid Background */}
       <div 
         className="absolute inset-0 pointer-events-none"

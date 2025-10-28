@@ -10,6 +10,9 @@ function PropertyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [maintenanceTasks, setMaintenanceTasks] = useState([]);
+  const [propertyHistory, setPropertyHistory] = useState([]);
+  const [partsInventory, setPartsInventory] = useState([]);
 
   useEffect(() => {
     loadPropertyDetails();
@@ -35,6 +38,9 @@ function PropertyPage() {
         if (user && user.role) {
           localStorage.setItem('user', JSON.stringify(user));
         }
+        
+        // Load additional maintenance data
+        loadMaintenanceData();
       } else {
         setError('Property not found');
       }
@@ -43,6 +49,68 @@ function PropertyPage() {
       setError('Failed to load property details');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const loadMaintenanceData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Load maintenance tasks
+      const maintenanceResponse = await fetch(`${API_BASE_URL}/properties/${propertyId}/maintenance`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (maintenanceResponse.ok) {
+        const maintenanceData = await maintenanceResponse.json();
+        setMaintenanceTasks(maintenanceData);
+      }
+      
+      // Load property history
+      const historyResponse = await fetch(`${API_BASE_URL}/properties/${propertyId}/history`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (historyResponse.ok) {
+        const historyData = await historyResponse.json();
+        setPropertyHistory(historyData);
+      }
+      
+      // Load parts inventory
+      const partsResponse = await fetch(`${API_BASE_URL}/properties/${propertyId}/parts`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (partsResponse.ok) {
+        const partsData = await partsResponse.json();
+        setPartsInventory(partsData);
+      }
+    } catch (error) {
+      console.error('Error loading maintenance data:', error);
+    }
+  };
+  
+  const markMaintenanceComplete = async (taskId, taskType, frequencyMonths) => {
+    try {
+      const token = localStorage.getItem('token');
+      const now = new Date();
+      const nextDue = frequencyMonths ? new Date(now.getTime() + frequencyMonths * 30 * 24 * 60 * 60 * 1000) : null;
+      
+      const response = await fetch(`${API_BASE_URL}/maintenance-tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          last_completed: now.toISOString(),
+          next_due_date: nextDue ? nextDue.toISOString() : null,
+          status: 'completed'
+        })
+      });
+      
+      if (response.ok) {
+        loadMaintenanceData(); // Reload to show updated data
+      }
+    } catch (error) {
+      console.error('Error updating maintenance task:', error);
     }
   };
 
@@ -79,6 +147,35 @@ function PropertyPage() {
       case 'low': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const getPropertyImage = () => {
+    if (!property) return '/CoverHouse.png';
+    
+    const address = property.address.toLowerCase();
+    
+    // 6000 SW Broadway St
+    if (address.includes('6000') && address.includes('broadway')) {
+      return '/6000_SW_Front.webp';
+    }
+    
+    // 67 million dollar property (Thene House)
+    if (address.includes('stonefield') || address.includes('holstrom')) {
+      return '/Theme House.webp';
+    }
+    
+    // Big House for large properties
+    if (property.property_value && property.property_value > 5000000) {
+      return '/Big House.webp';
+    }
+    
+    // Beautiful Property for other nice properties
+    if (property.property_value && property.property_value > 1000000) {
+      return '/Beatiful Property .webp';
+    }
+    
+    // Default cover house
+    return '/CoverHouse.png';
   };
 
   if (loading) {
@@ -181,25 +278,26 @@ function PropertyPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Property Images */}
             <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-black mb-6">Property Images</h2>
+              <h2 className="text-2xl font-bold text-black mb-6">Property View</h2>
               
-              {property.photos && property.photos.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                  {property.photos.map((photo, index) => (
-                    <div key={index} className="relative">
-                      <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-                        <div className="text-center">
-                          <p className="text-gray-600">{photo}</p>
-                          <p className="text-sm text-gray-500 mt-2">Property Image {index + 1}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <div className="text-center">
-                    <p className="text-gray-600">No images available</p>
+              <div className="relative w-full h-[600px] rounded-lg overflow-hidden border-2 border-gray-200">
+                <img 
+                  src={getPropertyImage()} 
+                  alt={property?.address || 'Property'} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Floor Plan for 6000 SW Broadway */}
+              {property?.address?.toLowerCase().includes('broadway') && (
+                <div className="mt-6">
+                  <h3 className="text-xl font-bold text-black mb-3">Floor Plan</h3>
+                  <div className="relative w-full h-[400px] rounded-lg overflow-hidden border-2 border-gray-200">
+                    <img 
+                      src="/Floor Plan.webp" 
+                      alt="Floor Plan" 
+                      className="w-full h-full object-contain bg-white"
+                    />
                   </div>
                 </div>
               )}
@@ -531,51 +629,70 @@ function PropertyPage() {
         {/* Maintenance Checklist Tab */}
         {activeTab === 'maintenance' && (
           <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-black mb-6">Maintenance Checklist</h2>
-            
-            {property.maintenanceChecklist && property.maintenanceChecklist.length > 0 ? (
+            <h2 className="text-2xl font-bold text-black mb-6">Maintenance Tasks</h2>
+ trending
+            {maintenanceTasks && maintenanceTasks.length > 0 ? (
               <div className="space-y-4">
-                {property.maintenanceChecklist.map((item) => (
-                  <div key={item.id} className={`border rounded-lg p-4 ${
-                    item.is_overdue ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                {maintenanceTasks.map((task) => (
+                  <div key={task.id} className={`border rounded-lg p-4 ${
+                    task.status === 'pending' ? 'border-amber-300 bg-amber-50' : 
+                    task.status === 'completed' ? 'border-green-300 bg-green-50' : 
+                    'border-gray-200'
                   }`}>
                     <div className="flex justify-between items-start">
                       <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900">{item.task_name}</h3>
-                        <p className="text-gray-600 mt-1">{item.description}</p>
+                        <h3 className="text-lg font-semibold text-gray-900">{task.task_name}</h3>
+                        <p className="text-gray-600 mt-1 text-sm capitalize">{task.task_type.replace('_', ' ')}</p>
                         
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3 text-sm">
+                          {task.frequency_months && (
+                            <div>
+                              <span className="font-medium text-gray-600">Frequency:</span>
+                              <p className="text-gray-900">Every {task.frequency_months} months</p>
+                            </div>
+                          )}
                           <div>
-                            <span className="font-medium text-gray-600">Frequency:</span>
-                            <p className="text-gray-900">Every {item.frequency_months} months</p>
+                            <span className=" font-medium text-gray-600">Last Completed:</span>
+                            <p className="text-gray-900">{task.last_completed ? formatDate(task.last_completed) : 'Never'}</p>
                           </div>
-                          <div>
-                            <span className="font-medium text-gray-600">Last Completed:</span>
-                            <p className="text-gray-900">{item.last_completed ? formatDate(item.last_completed) : 'Never'}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">Next Due:</span>
-                            <p className="text-gray-900">{formatDate(item.next_due)}</p>
-                          </div>
-                          <div>
-                            <span className="font-medium text-gray-600">Estimated Cost:</span>
-                            <p className="text-gray-900">{item.estimated_cost ? formatCurrency(item.estimated_cost) : 'TBD'}</p>
-                          </div>
+                          {task.next_due_date && (
+                            <div>
+                              <span className="font-medium text-gray-600">Next Due:</span>
+                              <p className="text-gray-900">{formatDate(task.next_due_date)}</p>
+                            </div>
+                          )}
+                          {task.contractor_name && (
+                            <div>
+                              <span className="font-medium text-gray-600">Contractor:</span>
+                              <p className="text-gray-900">{task.contractor_name}</p>
+                            </div>
+                          )}
                         </div>
+                        
+                        {task.notes && (
+                          <p className="text-sm text-gray-600 mt-2">{task.notes}</p>
+                        )}
                       </div>
                       
                       <div className="flex flex-col gap-2 ml-4">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getPriorityColor(item.priority)}`}>
-                          {item.priority}
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          task.status === 'pending' ? 'bg-amber-100 text-amber-800' : 
+                          task.status === 'completed' ? 'bg-green-100 text-green-800' : 
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {task.status}
                         </span>
-                        {item.is_overdue && (
-                          <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                            Overdue
-                          </span>
+                        {task.homeowner_editable && task.status === 'pending' && (
+                          <button
+                            onClick={() => markMaintenanceComplete(task.id, task.task_type, task.frequency_months)}
+                            className="px-4 py-2 bg-amber-800 text-white rounded-lg hover:bg-amber-900 transition-colors text-sm font-medium"
+                          >
+                            Mark Complete
+                          </button>
                         )}
-                        {item.contractor_required && (
+                        {!task.homeowner_editable && (
                           <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                            Contractor Required
+                            Requires Contractor
                           </span>
                         )}
                       </div>

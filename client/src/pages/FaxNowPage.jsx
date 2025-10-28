@@ -10,6 +10,35 @@ function FaxNowPage() {
 
   const API_BASE_URL = 'http://localhost:3001/api';
 
+  const getPropertyImage = (property) => {
+    if (!property) return '/CoverHouse.png';
+    
+    const address = property.address.toLowerCase();
+    
+    // 6000 SW Broadway St
+    if (address.includes('6000') && address.includes('broadway')) {
+      return '/6000_SW_Front.webp';
+    }
+    
+    // 67 million dollar property (Theme House)
+    if (address.includes('stonefield') || address.includes('holstrom')) {
+      return '/Theme House.webp';
+    }
+    
+    // Big House for large properties
+    if (property.property_value && property.property_value > 5000000) {
+      return '/Big House.webp';
+    }
+    
+    // Beautiful Property for other nice properties
+    if (property.property_value && property.property_value > 1000000) {
+      return '/Beatiful Property .webp';
+    }
+    
+    // Default cover house
+    return '/CoverHouse.png';
+  };
+
   // Search for properties
   const searchProperties = async (query) => {
     console.log('Searching for:', query);
@@ -186,6 +215,15 @@ function FaxNowPage() {
         {selectedProperty && (
           <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-8">
             <h2 className="text-3xl font-bold text-black mb-6">Property Information</h2>
+            
+            {/* Property Image */}
+            <div className="mb-8 border-2 border-gray-200 rounded-lg overflow-hidden">
+              <img 
+                src={getPropertyImage(selectedProperty)} 
+                alt={selectedProperty.address} 
+                className="w-full h-64 object-cover"
+              />
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">

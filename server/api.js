@@ -362,18 +362,38 @@ app.get('/api/admin/ongoing-projects', async (req, res) => {
   }
 });
 
-// POST /api/admin/notifications - Create public notifications
+// POST /api/admin/notifications - Create notifications (all users or by utility)
 app.post('/api/admin/notifications', async (req, res) => {
   try {
-    const { title, message, utility_type, is_public, priority } = req.body;
+    const { title, message, target_type, utility_type, priority } = req.body;
     
-    const result = await pool.query(
-      `INSERT INTO notices (property_ids, admin_id, type, title, message, priority)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [null, null, 'system_alert', title, message, priority || 'normal']
-    );
+    // If utility-based, find all properties with that utility
+    let ownerIds = [];
+    if (target_type === 'by_utility' && utility_type) {
+      const utilityResult = await pool.query(`
+        SELECT DISTINCT owner_id FROM properties 
+        WHERE connected_utilities::text LIKE '%${utility_type}%' 
+        AND owner_id IS NOT NULL
+      `);
+      ownerIds = utilityResult.rows.map(r => r.owner_id);
+    } else if (target_type === 'all_users') {
+      // Get all homeowner IDs
+      const allUsersResult = await pool.query('SELECT id FROM users WHERE role = $1', ['homeowner']);
+      ownerIds = allUsersResult.rows.map(r => r.id);
+    }
     
-    res.status(201).json(result.rows[0]);
+    // Create notification for each user
+    const notificationsCreated = [];
+    for (const ownerId of ownerIds) {
+      const result = await pool.query(
+        `INSERT INTO notices (user_id, title, type, description, status, priority)
+         VALUES ($1, $2, $3, $4, 'unread', $5) RETURNING *`,
+        [ownerId, title, 'general', message, priority || 'normal']
+      );
+      notificationsCreated.push(result.rows[0]);
+    }
+    
+    res.status(201).json({ created: notificationsCreated.length, notifications: notificationsCreated });
   } catch (error) {
     console.error('Error creating notification:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -838,6 +858,119 @@ app.post('/api/properties/submission', async (req, res) => {
     res.status(201).json(newProperty);
   } catch (error) {
     console.error('Error submitting property:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get maintenance tasks for a property
+app.get('/api/properties/:id/maintenance', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT mt.*, 
+              u.name as contractor_name,
+              u.company as contractor_company
+       FROM maintenance_tasks mt
+       LEFT JOIN users u ON mt.contractor_id = u.id
+       WHERE mt.property_id = $1
+       ORDER BY mt.next_due_date ASC, mt.status ASC`,
+      [id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching maintenance tasks:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get property history for a property
+app.get('/api/properties/:id/history', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT ph.*, 
+              u.name as contractor_name
+       FROM property_history ph
+       LEFT JOIN users u ON ph.contractor_id = u.id
+       WHERE ph.property_id = $1
+       ORDER BY ph.date_performed DESC
+       LIMIT 50`,
+      [id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching property history:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Get parts inventory for a property
+app.get('/api/properties/:id/parts', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT * FROM parts_inventory 
+       WHERE property_id = $1
+       ORDER BY part_type, part_name`,
+      [id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching parts inventory:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Update maintenance task status (homeowner can mark homeowner_editable tasks as completed)
+app.put('/api/maintenance-tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { last_completed, next_due_date, status } = req.body;
+    
+    const updateFields = [];
+    const values = [];
+    let paramCount = 1;
+    
+    if (last_completed !== undefined) {
+      updateFields.push(`last_completed = $${paramCount++}`);
+      values.push(last_completed);
+    }
+    if (next_due_date !== undefined) {
+      updateFields.push(`next_due_date = $${paramCount++}`);
+      values.push(next_due_date);
+    }
+    if (status !== undefined) {
+      updateFields.push(`status = $${paramCount++}`);
+      values.push(status);
+    }
+    
+    if (updateFields.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    values.push(id);
+    
+    const result = await pool.query(
+      `UPDATE maintenance_tasks 
+       SET ${updateFields.join(', ')}
+       WHERE id = $${paramCount} AND homeowner_editable = true
+       RETURNING *`,
+      values
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Task not found or not editable by homeowner' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating maintenance task:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

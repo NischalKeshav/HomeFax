@@ -110,6 +110,54 @@ CREATE TABLE public_utilities (
   notes TEXT
 );
 
+-- 8. Maintenance Tasks Table
+-- Recurring and scheduled maintenance tasks for properties
+CREATE TABLE maintenance_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  task_name TEXT NOT NULL,
+  task_type TEXT CHECK (task_type IN ('roofing', 'hail_damage', 'windows', 'filters', 'winterization', 'general')) NOT NULL,
+  frequency_months INT, -- How often in months (e.g., 3 = every 3 months)
+  last_completed TIMESTAMP,
+  next_due_date TIMESTAMP,
+  status TEXT DEFAULT 'pending', -- pending, in_progress, completed
+  homeowner_editable BOOLEAN DEFAULT FALSE, -- Can homeowner update this themselves?
+  contractor_id UUID REFERENCES users(id),
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 9. Property History Table
+-- All past actions/events on a property
+CREATE TABLE property_history (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  event_type TEXT CHECK (event_type IN ('ownership_change', 'renovation', 'maintenance', 'damage', 'inspection', 'repair')) NOT NULL,
+  description TEXT NOT NULL,
+  contractor_id UUID REFERENCES users(id),
+  homeowner_id UUID REFERENCES users(id),
+  event_date TIMESTAMP DEFAULT NOW(),
+  attachments TEXT[],
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- 10. Parts Inventory Table
+-- All parts/fixtures/materials in a property
+CREATE TABLE parts_inventory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  property_id UUID REFERENCES properties(id) ON DELETE CASCADE,
+  part_name TEXT NOT NULL,
+  part_type TEXT, -- e.g., "paint", "fixture", "appliance", "window", "door"
+  manufacturer TEXT,
+  model_number TEXT,
+  purchase_date DATE,
+  warranty_until DATE,
+  quantity INT DEFAULT 1,
+  location TEXT, -- e.g., "Kitchen", "Living Room", "Exterior"
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
@@ -123,6 +171,12 @@ CREATE INDEX idx_upkeep_logs_property_id ON upkeep_logs(property_id);
 CREATE INDEX idx_notices_type ON notices(type);
 CREATE INDEX idx_notices_status ON notices(status);
 CREATE INDEX idx_public_utilities_type ON public_utilities(type);
+CREATE INDEX idx_maintenance_tasks_property_id ON maintenance_tasks(property_id);
+CREATE INDEX idx_maintenance_tasks_status ON maintenance_tasks(status);
+CREATE INDEX idx_maintenance_tasks_next_due_date ON maintenance_tasks(next_due_date);
+CREATE INDEX idx_property_history_property_id ON property_history(property_id);
+CREATE INDEX idx_property_history_event_date ON property_history(event_date);
+CREATE INDEX idx_parts_inventory_property_id ON parts_inventory(property_id);
 
 -- Add constraints
 ALTER TABLE properties ADD CONSTRAINT chk_percent_complete CHECK (percent_complete >= 0 AND percent_complete <= 100);

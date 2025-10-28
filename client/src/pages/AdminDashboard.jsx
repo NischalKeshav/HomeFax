@@ -17,8 +17,26 @@ function AdminDashboard() {
   const [pendingVerifications, setPendingVerifications] = useState([]);
   const [adminKeys, setAdminKeys] = useState([]);
   const [showAdminKeyModal, setShowAdminKeyModal] = useState(false);
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [newKeyForm, setNewKeyForm] = useState({ territory: 'Benton County, Arkansas', jurisdiction: 'County' });
+  const [notificationForm, setNotificationForm] = useState({ 
+    title: '', 
+    message: '', 
+    target_type: 'all_users', // 'all_users' or 'by_utility'
+    utility_type: '',
+    priority: 'normal' 
+  });
   const [loading, setLoading] = useState(true);
+  const [currentBG, setCurrentBG] = useState(0);
+  const backgrounds = ['/AdminBG1.png', '/AdminBg2.png'];
+
+  // Rotate background images
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentBG(prev => (prev + 1) % backgrounds.length);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     // Get user from localStorage
@@ -159,6 +177,35 @@ function AdminDashboard() {
     }
   };
 
+  const handlePushNotification = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/admin/notifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(notificationForm)
+      });
+
+      if (response.ok) {
+        alert('Notification pushed successfully!');
+        setShowNotificationModal(false);
+        setNotificationForm({ title: '', message: '', target_type: 'all_users', utility_type: '', priority: 'normal' });
+        loadDashboardData();
+      } else {
+        alert('Failed to push notification');
+      }
+    } catch (error) {
+      console.error('Error pushing notification:', error);
+      alert('Failed to push notification');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -188,6 +235,12 @@ function AdminDashboard() {
               Public Fax
             </button>
             <button
+              onClick={() => setShowNotificationModal(true)}
+              className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+            >
+              Push Notification
+            </button>
+            <button
               onClick={handleLogout}
               className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-colors"
             >
@@ -198,6 +251,24 @@ function AdminDashboard() {
       </div>
 
       <div className="p-8">
+        {/* Rotating Hero Images Section */}
+        <div className="mb-8 border-2 border-gray-200 rounded-lg overflow-hidden shadow-lg relative h-64">
+          <img 
+            src={backgrounds[0]} 
+            alt="Background 1" 
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+              currentBG === 0 ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+          <img 
+            src={backgrounds[1]} 
+            alt="Background 2" 
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+              currentBG === 1 ? 'opacity-100' : 'opacity-0'
+            }`}
+          />
+        </div>
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
@@ -474,6 +545,103 @@ function AdminDashboard() {
                     Create Key
                   </button>
                 </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Push Notification Modal */}
+      {showNotificationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
+            <h2 className="text-2xl font-bold text-black mb-6">Push Notification</h2>
+            
+            <form onSubmit={handlePushNotification}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Title *</label>
+                  <input
+                    type="text"
+                    value={notificationForm.title}
+                    onChange={(e) => setNotificationForm({ ...notificationForm, title: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-600 outline-none"
+                    placeholder="Water pressure down"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Message *</label>
+                  <textarea
+                    value={notificationForm.message}
+                    onChange={(e) => setNotificationForm({ ...notificationForm, message: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-600 outline-none"
+                    rows="3"
+                    placeholder="Water pressure will be reduced for next 3 days..."
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Target Audience</label>
+                  <select
+                    value={notificationForm.target_type}
+                    onChange={(e) => setNotificationForm({ ...notificationForm, target_type: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-600 outline-none"
+                  >
+                    <option value="all_users">All Users</option>
+                    <option value="by_utility">By Utility Type</option>
+                  </select>
+                </div>
+                
+                {notificationForm.target_type === 'by_utility' && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-600 mb-2">Utility Type</label>
+                    <select
+                      value={notificationForm.utility_type}
+                      onChange={(e) => setNotificationForm({ ...notificationForm, utility_type: e.target.value })}
+                      className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-600 outline-none"
+                    >
+                      <option value="">Select utility...</option>
+                      <option value="water">Water</option>
+                      <option value="electricity">Electricity</option>
+                      <option value="gas">Gas</option>
+                      <option value="internet">Internet</option>
+                      <option value="sewer">Sewer</option>
+                    </select>
+                  </div>
+                )}
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-600 mb-2">Priority</label>
+                  <select
+                    value={notificationForm.priority}
+                    onChange={(e) => setNotificationForm({ ...notificationForm, priority: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-600 outline-none"
+                  >
+                    <option value="low">Low</option>
+                    <option value="normal">Normal</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex gap-4 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowNotificationModal(false)}
+                  className="flex-1 bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+                >
+                  Push Notification
+                </button>
               </div>
             </form>
           </div>

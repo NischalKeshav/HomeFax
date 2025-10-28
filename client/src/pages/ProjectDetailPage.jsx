@@ -207,6 +207,16 @@ function ProjectDetailPage() {
         {showUpdateForm && (
           <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6 mb-8">
             <h2 className="text-2xl font-bold text-black mb-4">Add Update</h2>
+            
+            {/* Contractor Update Image */}
+            <div className="mb-6 border-2 border-gray-200 rounded-lg overflow-hidden">
+              <img 
+                src="/Contracter Update Image.png" 
+                alt="Contractor Update" 
+                className="w-full h-48 object-cover"
+              />
+            </div>
+            
             <form onSubmit={handleSubmitUpdate}>
               <div className="space-y-4">
                 <div>
@@ -247,7 +257,6 @@ function ProjectDetailPage() {
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-amber-600 outline-none"
                       min="0"
                       max="100"
-                      required
                     />
                   </div>
                   <div>

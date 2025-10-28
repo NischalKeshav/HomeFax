@@ -144,9 +144,18 @@ function HomeownerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white relative">
+      {/* Low-opacity background image */}
+      <div className="fixed inset-0 opacity-10 z-0">
+        <img 
+          src="/HomeOwnerDash1.png" 
+          alt="Home" 
+          className="w-full h-full object-cover"
+        />
+      </div>
+      
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-8 py-6">
+      <div className="bg-white border-b border-gray-200 px-8 py-6 relative z-10">
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold text-black">Homeowner Dashboard</h1>
@@ -169,7 +178,7 @@ function HomeownerDashboard() {
         </div>
       </div>
 
-      <div className="p-8">
+      <div className="p-8 relative z-10">
         {/* Tabs */}
         <div className="mb-6 border-b border-gray-200">
           <div className="flex space-x-8">

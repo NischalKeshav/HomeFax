@@ -135,6 +135,15 @@ function SignUpPage() {
     <div className="min-h-screen bg-white flex items-center justify-center p-8">
       <div className="w-full max-w-2xl">
         {/* Header */}
+        {/* Signup Image */}
+        <div className="mb-8 border-2 border-gray-200 rounded-lg overflow-hidden shadow-lg">
+          <img 
+            src="/Sign up.png" 
+            alt="Sign Up" 
+            className="w-full h-64 object-cover"
+          />
+        </div>
+        
         <div className="text-center mb-8">
           <h1 className="text-6xl font-bold text-black mb-4">
             Sign Up

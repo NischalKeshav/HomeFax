@@ -327,6 +327,15 @@ function ContractorDashboard() {
           </div>
         </div>
 
+        {/* Contractor Background Image */}
+        <div className="my-8 border-2 border-gray-200 rounded-lg overflow-hidden shadow-lg">
+          <img 
+            src="/ContracterBG.png" 
+            alt="Contractor" 
+            className="w-full h-48 object-cover"
+          />
+        </div>
+
         {/* Content based on active tab */}
         {activeTab === 'projects' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -524,6 +533,15 @@ function ContractorDashboard() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-black mb-6">Submit New Property</h2>
+            
+            {/* Plot Image */}
+            <div className="mb-6 border-2 border-gray-200 rounded-lg overflow-hidden">
+              <img 
+                src="/Plot.webp" 
+                alt="Property Plot" 
+                className="w-full h-48 object-cover"
+              />
+            </div>
             
             <form onSubmit={handleSubmitNewProperty}>
               <div className="space-y-4">
