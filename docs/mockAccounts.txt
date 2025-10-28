@@ -1,0 +1,6 @@
+These are purely for the purpose of testing and should not be used by unauthorized individuals at the cost of a lawsuit. 
+
+homeowner: abhijit.paradkar88@gmail.com ;password: 123456
+contracter: richard.jackson@renovator.com; password :123456
+rich guy: caspian.@gmail.com; password: 123456789
+

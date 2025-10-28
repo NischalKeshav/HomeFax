@@ -8,6 +8,7 @@ import HomeownerDashboard from './pages/HomeownerDashboard';
 import ContractorDashboard from './pages/ContractorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PropertyPage from './pages/PropertyPage';
+import ProjectDetailPage from './pages/ProjectDetailPage';
 import LoadingAnimation from './components/LoadingAnimation';
 
 function AppContent() {
@@ -41,6 +42,7 @@ function AppContent() {
       <Route path="/dashboard/contractor" element={<ContractorDashboard />} />
       <Route path="/dashboard/admin" element={<AdminDashboard />} />
       <Route path="/property/:propertyId" element={<PropertyPage />} />
+      <Route path="/project/:projectId" element={<ProjectDetailPage />} />
     </Routes>
   );
 }

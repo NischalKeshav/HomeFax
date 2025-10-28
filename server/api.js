@@ -135,6 +135,32 @@ app.get('/api/properties/:id/comprehensive', async (req, res) => {
       ORDER BY pm.created_at DESC
     `, [id]);
 
+    // Get active projects with updates
+    const activeProjectsResult = await pool.query(`
+      SELECT p.*, u.name as contractor_name, u.company as contractor_company
+      FROM projects p
+      LEFT JOIN users u ON p.contractor_id = u.id
+      WHERE p.property_id = $1 AND p.status = 'in_progress'
+      ORDER BY p.created_at DESC
+    `, [id]);
+
+    // For each active project, get its updates
+    const projectsWithUpdates = await Promise.all(
+      activeProjectsResult.rows.map(async (project) => {
+        const updatesResult = await pool.query(`
+          SELECT * FROM project_updates
+          WHERE project_id = $1
+          ORDER BY created_at DESC
+          LIMIT 5
+        `, [project.id]);
+        
+        return {
+          ...project,
+          updates: updatesResult.rows
+        };
+      })
+    );
+
     // Combine all data
     const comprehensiveProperty = {
       ...property,
@@ -142,7 +168,8 @@ app.get('/api/properties/:id/comprehensive', async (req, res) => {
       ongoingTasks: tasksResult.rows,
       partsInventory: partsResult.rows,
       maintenanceChecklist: maintenanceResult.rows,
-      models3D: modelsResult.rows
+      models3D: modelsResult.rows,
+      activeProjects: projectsWithUpdates
     };
 
     res.json(comprehensiveProperty);
@@ -174,11 +201,12 @@ app.get('/api/access-requests/owner/:owner_id', async (req, res) => {
   try {
     const { owner_id } = req.params;
     const result = await pool.query(
-      `SELECT ar.*, p.address, p.registration_number, u.name as requester_name, u.email as requester_email
+      `SELECT ar.*, p.address as property_address, p.registration_number, u.name as requester_name, u.email as requester_email, uc.name as contractor_name
        FROM access_requests ar
        JOIN properties p ON ar.property_id = p.id
        LEFT JOIN users u ON ar.contractor_id = u.id
-       WHERE ar.owner_id = $1 AND ar.status = 'pending'
+       LEFT JOIN users uc ON ar.contractor_id = uc.id
+       WHERE ar.owner_id = $1
        ORDER BY ar.created_at DESC`,
       [owner_id]
     );
@@ -248,6 +276,251 @@ app.get('/api/properties/:id/upkeep', async (req, res) => {
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching upkeep logs:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/project-updates - Create a project update and update the project
+app.post('/api/project-updates', async (req, res) => {
+  try {
+    const { project_id, contractor_id, update_type, title, description, progress_percentage, files_added, parts_listed, photos_added } = req.body;
+    
+    // Create the update
+    const updateResult = await pool.query(
+      `INSERT INTO project_updates 
+       (project_id, contractor_id, update_type, title, description, progress_percentage, files_added, parts_listed, photos_added)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [project_id, contractor_id, update_type, title, description, progress_percentage, files_added, parts_listed, photos_added]
+    );
+    
+    // Update the project if progress_percentage is provided
+    if (progress_percentage !== undefined && progress_percentage !== null) {
+      await pool.query(
+        `UPDATE projects SET percent_complete = $1 WHERE id = $2`,
+        [progress_percentage, project_id]
+      );
+    }
+    
+    // Update attachments if files are provided
+    if (files_added && files_added.length > 0) {
+      const currentProject = await pool.query('SELECT attachments FROM projects WHERE id = $1', [project_id]);
+      const existingFiles = currentProject.rows[0]?.attachments || [];
+      const updatedFiles = [...existingFiles, ...files_added];
+      
+      await pool.query(
+        `UPDATE projects SET attachments = $1 WHERE id = $2`,
+        [updatedFiles, project_id]
+      );
+    }
+    
+    // Create notification for homeowner about the update
+    const projectInfo = await pool.query(`
+      SELECT p.property_id, p.description, u.name as contractor_name, prop.owner_id
+      FROM projects p
+      LEFT JOIN users u ON p.contractor_id = u.id
+      LEFT JOIN properties prop ON p.property_id = prop.id
+      WHERE p.id = $1
+    `, [project_id]);
+    
+    if (projectInfo.rows[0]?.owner_id) {
+      await pool.query(`
+        INSERT INTO notices (user_id, property_ids, contractor_id, title, type, description, status, priority)
+        VALUES ($1, $2, $3, $4, 'general', $5, 'unread', 'normal')
+      `, [
+        projectInfo.rows[0].owner_id,
+        [projectInfo.rows[0].property_id],
+        contractor_id,
+        `Project update: ${title}`,
+        `${projectInfo.rows[0].contractor_name} provided an update on ${projectInfo.rows[0].description}: ${description}`
+      ]);
+    }
+    
+    res.status(201).json(updateResult.rows[0]);
+  } catch (error) {
+    console.error('Error creating project update:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/admin/ongoing-projects - Get all ongoing projects for admin
+app.get('/api/admin/ongoing-projects', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*, pr.address as property_address, pr.owner_id, u.name as contractor_name, u.company, owner.name as owner_name
+       FROM projects p
+       LEFT JOIN properties pr ON p.property_id = pr.id
+       LEFT JOIN users u ON p.contractor_id = u.id
+       LEFT JOIN users owner ON pr.owner_id = owner.id
+       WHERE p.status IN ('in_progress', 'pending')
+       ORDER BY p.created_at DESC`
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching ongoing projects:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin/notifications - Create public notifications
+app.post('/api/admin/notifications', async (req, res) => {
+  try {
+    const { title, message, utility_type, is_public, priority } = req.body;
+    
+    const result = await pool.query(
+      `INSERT INTO notices (property_ids, admin_id, type, title, message, priority)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [null, null, 'system_alert', title, message, priority || 'normal']
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/project-updates/:project_id - Get updates for a project
+app.get('/api/project-updates/:project_id', async (req, res) => {
+  try {
+    const { project_id } = req.params;
+    const result = await pool.query(
+      `SELECT pu.*, u.name as contractor_name
+       FROM project_updates pu
+       LEFT JOIN users u ON pu.contractor_id = u.id
+       WHERE pu.project_id = $1
+       ORDER BY pu.created_at DESC`,
+      [project_id]
+    );
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching project updates:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/projects - Get projects with optional filters
+app.get('/api/projects', async (req, res) => {
+  try {
+    const { contractor_id, property_id, status } = req.query;
+    
+    let query = `
+      SELECT p.*, pr.address as property_address
+      FROM projects p
+      LEFT JOIN properties pr ON p.property_id = pr.id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (contractor_id) {
+      query += ` AND p.contractor_id = $${params.length + 1}`;
+      params.push(contractor_id);
+    }
+    
+    if (property_id) {
+      query += ` AND p.property_id = $${params.length + 1}`;
+      params.push(property_id);
+    }
+    
+    if (status) {
+      query += ` AND p.status = $${params.length + 1}`;
+      params.push(status);
+    }
+    
+    query += ' ORDER BY p.created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching projects:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/projects - Create a new project
+app.post('/api/projects', async (req, res) => {
+  try {
+    const { property_id, contractor_id, admin_id, type, description, status, percent_complete, attachments } = req.body;
+    
+    const result = await pool.query(
+      `INSERT INTO projects (property_id, contractor_id, admin_id, type, description, status, percent_complete, attachments, start_date)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW()) RETURNING *`,
+      [property_id, contractor_id, admin_id, type, description, status, percent_complete || 0, attachments]
+    );
+    
+    const newProject = result.rows[0];
+    
+    // Create notification for homeowner
+    const propertyResult = await pool.query('SELECT owner_id FROM properties WHERE id = $1', [property_id]);
+    const contractorResult = await pool.query('SELECT name, company FROM users WHERE id = $1', [contractor_id]);
+    
+    if (propertyResult.rows[0]?.owner_id) {
+      await pool.query(`
+        INSERT INTO notices (user_id, property_ids, contractor_id, title, type, description, status, priority)
+        VALUES ($1, $2, $3, $4, 'general', $5, 'unread', 'high')
+      `, [
+        propertyResult.rows[0].owner_id,
+        [property_id],
+        contractor_id,
+        `New ${type} project started`,
+        `${contractorResult.rows[0]?.name || 'A contractor'} has started a ${type} project: ${description}`
+      ]);
+    }
+    
+    res.status(201).json(newProject);
+  } catch (error) {
+    console.error('Error creating project:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/projects/:id - Get a single project
+app.get('/api/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query(
+      `SELECT p.*, pr.address as property_address
+       FROM projects p
+       LEFT JOIN properties pr ON p.property_id = pr.id
+       WHERE p.id = $1`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching project:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/projects/:id - Update a project
+app.put('/api/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description, status, percent_complete, attachments } = req.body;
+    
+    const result = await pool.query(
+      `UPDATE projects 
+       SET description = COALESCE($1, description),
+           status = COALESCE($2, status),
+           percent_complete = COALESCE($3, percent_complete),
+           attachments = COALESCE($4, attachments)
+       WHERE id = $5 RETURNING *`,
+      [description, status, percent_complete, attachments, id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error('Error updating project:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -456,15 +729,115 @@ app.get('/api/auth/verify', async (req, res) => {
   }
 });
 
+// GET /api/users - Get all users (admin only)
+app.get('/api/users', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, name, email, role, approved_by_admin, company, contractor_role, created_at FROM users ORDER BY created_at DESC'
+    );
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/admin-keys - Get available admin keys (for testing)
 app.get('/api/admin-keys', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT key_value, is_used, created_at FROM admin_keys ORDER BY created_at DESC'
+      'SELECT key_value, is_used, created_at, territory, created_by FROM admin_keys ORDER BY created_at DESC'
     );
     res.json(result.rows);
   } catch (error) {
     console.error('Error fetching admin keys:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/admin-keys - Create a new admin key
+app.post('/api/admin-keys', async (req, res) => {
+  try {
+    const { key_value, territory, created_by } = req.body;
+    
+    const result = await pool.query(
+      'INSERT INTO admin_keys (key_value, territory, created_by) VALUES ($1, $2, $3) RETURNING *',
+      [key_value, territory, created_by]
+    );
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating admin key:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/notifications/user/:user_id - Get all notifications for a user
+app.get('/api/notifications/user/:user_id', async (req, res) => {
+  try {
+    const { user_id } = req.params;
+    
+    // Get notifications for this user, including project updates
+    const result = await pool.query(`
+      SELECT 
+        n.*,
+        COALESCE(
+          (SELECT p.address FROM properties p WHERE p.id = ANY(n.property_ids) LIMIT 1),
+          (SELECT p.address FROM properties p WHERE p.id = ANY(n.affected_properties) LIMIT 1)
+        ) as property_address
+      FROM notices n
+      WHERE n.user_id = $1
+      ORDER BY n.created_at DESC
+    `, [user_id]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/notifications/:id/mark-read - Mark a notification as read
+app.put('/api/notifications/:id/mark-read', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await pool.query(`
+      UPDATE notices SET status = 'read', updated_at = NOW()
+      WHERE id = $1
+    `, [id]);
+    
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/properties/submission - Submit a new property for admin verification
+app.post('/api/properties/submission', async (req, res) => {
+  try {
+    const { address, location, build_year, zoning, description, timeline_months, estimated_budget, plans_attachments, registration_number, contractor_id, status } = req.body;
+    
+    // Create the property in pending_verification status
+    const result = await pool.query(
+      `INSERT INTO properties (address, build_year, zoning, registration_number, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) RETURNING *`,
+      [address, build_year, zoning, registration_number || `PENDING-${Date.now()}`, status || 'pending_verification']
+    );
+    
+    const newProperty = result.rows[0];
+    
+    // Create an access request for the contractor
+    await pool.query(
+      `INSERT INTO access_requests (property_id, contractor_id, request_type, status, requester_details)
+       VALUES ($1, $2, 'new_property_submission', 'pending', $3)`,
+      [newProperty.id, contractor_id, `New property submission: ${description}. Timeline: ${timeline_months} months. Budget: ${estimated_budget}`]
+    );
+    
+    res.status(201).json(newProperty);
+  } catch (error) {
+    console.error('Error submitting property:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

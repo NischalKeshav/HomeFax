@@ -19,6 +19,7 @@ function PropertyPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const user = JSON.parse(localStorage.getItem('user'));
       
       const response = await fetch(`${API_BASE_URL}/properties/${propertyId}/comprehensive`, {
         headers: {
@@ -29,6 +30,11 @@ function PropertyPage() {
       if (response.ok) {
         const data = await response.json();
         setProperty(data);
+        
+        // Store user role to prevent switching
+        if (user && user.role) {
+          localStorage.setItem('user', JSON.stringify(user));
+        }
       } else {
         setError('Property not found');
       }
@@ -93,7 +99,10 @@ function PropertyPage() {
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
           <p className="text-gray-600 mb-4">{error || 'Property not found'}</p>
           <button
-            onClick={() => navigate('/dashboard/homeowner')}
+            onClick={() => {
+              const user = JSON.parse(localStorage.getItem('user'));
+              navigate(`/dashboard/${user?.role || 'homeowner'}`);
+            }}
             className="bg-amber-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
           >
             Back to Dashboard
@@ -135,7 +144,10 @@ function PropertyPage() {
           </div>
           <div className="flex gap-4">
             <button
-              onClick={() => navigate('/dashboard/homeowner')}
+              onClick={() => {
+                const user = JSON.parse(localStorage.getItem('user'));
+                navigate(`/dashboard/${user?.role || 'homeowner'}`);
+              }}
               className="bg-amber-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
             >
               Back to Dashboard
@@ -147,7 +159,7 @@ function PropertyPage() {
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8 px-8">
-          {['overview', 'tasks', 'history', 'parts', 'maintenance', 'models'].map((tab) => (
+          {['overview', 'active', 'tasks', 'history', 'parts', 'maintenance', 'models'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -259,6 +271,95 @@ function PropertyPage() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Active Projects Tab */}
+        {activeTab === 'active' && (
+          <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+            <h2 className="text-2xl font-bold text-black mb-6">Active Projects</h2>
+            
+            {property.activeProjects && property.activeProjects.length > 0 ? (
+              <div className="space-y-6">
+                {property.activeProjects.map((project) => (
+                  <div key={project.id} className="border-2 border-amber-800 rounded-lg p-6">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">{project.description}</h3>
+                        <p className="text-sm text-gray-600 mb-1">Contractor: {project.contractor_name} ({project.contractor_company})</p>
+                        <p className="text-sm text-gray-600">Type: {project.type.charAt(0).toUpperCase() + project.type.slice(1)}</p>
+                      </div>
+                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold">
+                        {project.status.replace('_', ' ')}
+                      </span>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <div className="flex justify-between mb-2">
+                        <span className="text-sm font-semibold text-gray-700">Progress</span>
+                        <span className="text-sm font-semibold text-gray-900">{project.percent_complete}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-3">
+                        <div
+                          className="bg-amber-800 h-3 rounded-full transition-all duration-300"
+                          style={{ width: `${project.percent_complete}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    {project.updates && project.updates.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Recent Updates</h4>
+                        <div className="space-y-3 max-h-64 overflow-y-auto">
+                          {project.updates.map((update) => (
+                            <div key={update.id} className="border-l-4 border-amber-800 pl-4 py-2 bg-gray-50">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <p className="font-semibold text-gray-900">{update.title}</p>
+                                  <p className="text-sm text-gray-600">{update.description}</p>
+                                  {update.update_type === 'progress' && update.progress_percentage !== null && (
+                                    <p className="text-sm text-amber-800 font-medium mt-1">
+                                      +{update.progress_percentage - (project.percent_complete - update.progress_percentage)}% progress
+                                    </p>
+                                  )}
+                                </div>
+                                <span className="text-xs text-gray-500">
+                                  {new Date(update.created_at).toLocaleDateString()}
+                                </span>
+                              </div>
+                              {update.files_added && update.files_added.length > 0 && (
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {update.files_added.map((file, idx) => (
+                                    <span key={idx} className="px-2 py-1 bg-white border border-gray-300 rounded text-xs text-gray-700">
+                                      {file}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {project.attachments && project.attachments.length > 0 && (
+                      <div className="mt-6">
+                        <h4 className="text-lg font-semibold text-gray-900 mb-3">Project Files</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {project.attachments.map((file, idx) => (
+                            <span key={idx} className="px-3 py-1 bg-gray-100 border border-gray-300 rounded text-sm text-gray-700">
+                              {file}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500">No active projects</p>
+            )}
           </div>
         )}
 
