@@ -364,8 +364,8 @@ function AdminDashboard() {
                 </div>
               </button>
               
-              {/* Only show System Reports for super admin */}
-              {!user?.territory && (
+              {/* Only show System Reports for Arjun Paradkar (super admin) */}
+              {user?.name === 'Arjun Paradkar' && (
                 <button
                   onClick={() => {
                     // Display system reports in an alert for now
@@ -482,8 +482,8 @@ function AdminDashboard() {
           )}
         </div>
 
-        {/* Admin Keys Management - Only visible to super admin */}
-        {!user?.territory && (
+        {/* Admin Keys Management - Only visible to Arjun Paradkar (super admin) */}
+        {user?.name === 'Arjun Paradkar' && (
         <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6 mt-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-black">Admin Keys ({adminKeys.length})</h2>
@@ -526,8 +526,8 @@ function AdminDashboard() {
         )}
       </div>
 
-      {/* Create Admin Key Modal - Only visible to super admin */}
-      {!user?.territory && showAdminKeyModal && (
+      {/* Create Admin Key Modal - Only visible to Arjun Paradkar (super admin) */}
+      {user?.name === 'Arjun Paradkar' && showAdminKeyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
             <h2 className="text-2xl font-bold text-black mb-6">Create New Admin Key</h2>
