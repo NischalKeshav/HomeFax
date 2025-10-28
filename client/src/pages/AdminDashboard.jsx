@@ -236,7 +236,7 @@ function AdminDashboard() {
             </button>
             <button
               onClick={() => setShowNotificationModal(true)}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              className="bg-amber-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
             >
               Push Notification
             </button>
@@ -349,25 +349,19 @@ function AdminDashboard() {
                 </div>
               </button>
               
-              <button
-                className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-amber-600 transition-colors text-left"
-              >
-                <div className="flex items-center">
-                  <div>
-                    <h3 className="font-semibold">System Reports</h3>
-                    <p className="text-sm text-gray-600">View system analytics</p>
+              {/* Only show System Reports for super admin */}
+              {!user?.territory && (
+                <button
+                  className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-amber-600 transition-colors text-left"
+                >
+                  <div className="flex items-center">
+                    <div>
+                      <h3 className="font-semibold">System Reports</h3>
+                      <p className="text-sm text-gray-600">View system analytics</p>
+                    </div>
                   </div>
-                </div>
-              </button>
-              
-              <button
-                className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-amber-600 transition-colors text-left"
-              >
-                <div>
-                  <h3 className="font-semibold">Admin Keys</h3>
-                  <p className="text-sm text-gray-600">Manage admin registration keys</p>
-                </div>
-              </button>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -468,7 +462,8 @@ function AdminDashboard() {
           )}
         </div>
 
-        {/* Admin Keys Management */}
+        {/* Admin Keys Management - Only visible to super admin */}
+        {!user?.territory && (
         <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6 mt-8">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-black">Admin Keys ({adminKeys.length})</h2>
@@ -508,10 +503,11 @@ function AdminDashboard() {
             <p className="text-gray-500">No admin keys created yet</p>
           )}
         </div>
+        )}
       </div>
 
-      {/* Create Admin Key Modal */}
-      {showAdminKeyModal && (
+      {/* Create Admin Key Modal - Only visible to super admin */}
+      {!user?.territory && showAdminKeyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
             <h2 className="text-2xl font-bold text-black mb-6">Create New Admin Key</h2>

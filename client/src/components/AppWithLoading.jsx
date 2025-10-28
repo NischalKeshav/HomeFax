@@ -3,6 +3,9 @@ import { useLocation, Routes, Route } from 'react-router-dom';
 import LandingPage from '../pages/LandingPage';
 import FaxNowPage from '../pages/FaxNowPage';
 
+// Set to false to temporarily disable loading animations
+const ENABLE_LOADING_ANIMATION = true;
+
 function LoadingAnimation() {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -65,7 +68,7 @@ function AppWithLoading() {
     }
   }, [location.pathname, isLoading, currentPath]);
 
-  if (isLoading || showLoading) {
+  if (ENABLE_LOADING_ANIMATION && (isLoading || showLoading)) {
     return <LoadingAnimation />;
   }
 

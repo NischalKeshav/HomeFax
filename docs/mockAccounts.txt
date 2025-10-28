@@ -4,3 +4,10 @@ homeowner: abhijit.paradkar88@gmail.com ;password: 123456
 contracter: richard.jackson@renovator.com; password :123456
 rich guy: caspian.@gmail.com; password: 123456789
 
+SUPER ADMIN (System Administrator - Full Access):
+Email: admin@bentoncounty.gov (when no territory is set)
+
+Territorial Admin (Benton County - Limited Access):
+Email: admin@bentoncounty.gov
+Password: benton2024
+Note: This admin CANNOT create admin keys or access system reports
