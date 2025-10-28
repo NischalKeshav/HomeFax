@@ -150,6 +150,12 @@ function AdminDashboard() {
       // Generate a random key
       const keyValue = `ADMIN-${Math.random().toString(36).substring(2, 15).toUpperCase()}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`;
       
+      console.log('Creating admin key with:', {
+        key_value: keyValue,
+        territory: newKeyForm.territory,
+        created_by: userData?.id
+      });
+      
       const response = await fetch(`${API_BASE_URL}/admin-keys`, {
         method: 'POST',
         headers: {
@@ -159,21 +165,25 @@ function AdminDashboard() {
         body: JSON.stringify({
           key_value: keyValue,
           territory: newKeyForm.territory,
-          created_by: userData.id
+          created_by: userData?.id
         })
       });
 
+      const data = await response.json();
+      console.log('Admin key creation response:', response.status, data);
+
       if (response.ok) {
-        alert(`Admin key created: ${keyValue}`);
+        alert(`Admin key created successfully!\n\nKey: ${keyValue}\nTerritory: ${newKeyForm.territory}\n\nCopy this key and give it to the new admin.`);
         setShowAdminKeyModal(false);
         setNewKeyForm({ territory: 'Benton County, Arkansas', jurisdiction: 'County' });
         loadDashboardData();
       } else {
-        alert('Failed to create admin key');
+        console.error('Failed to create admin key:', data);
+        alert(`Failed to create admin key: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error creating admin key:', error);
-      alert('Failed to create admin key');
+      alert(`Failed to create admin key: ${error.message}`);
     }
   };
 
@@ -341,6 +351,11 @@ function AdminDashboard() {
               </button>
               
               <button
+                onClick={() => {
+                  // Display users in an alert for now (or create a dedicated modal)
+                  console.log('User Management clicked - showing users');
+                  alert(`Total Users: ${stats.totalUsers}\n\nThis feature will display a full user management interface.`);
+                }}
                 className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-amber-600 transition-colors text-left"
               >
                 <div>
@@ -352,6 +367,11 @@ function AdminDashboard() {
               {/* Only show System Reports for super admin */}
               {!user?.territory && (
                 <button
+                  onClick={() => {
+                    // Display system reports in an alert for now
+                    console.log('System Reports clicked - showing reports');
+                    alert(`System Reports:\n\n- Total Properties: ${stats.totalProperties}\n- Total Users: ${stats.totalUsers}\n- Pending Requests: ${stats.pendingRequests}\n- Active Projects: ${stats.activeProjects}\n\nThis feature will display detailed analytics.`);
+                  }}
                   className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-amber-600 transition-colors text-left"
                 >
                   <div className="flex items-center">
