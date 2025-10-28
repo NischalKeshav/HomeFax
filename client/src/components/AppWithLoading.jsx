@@ -4,7 +4,7 @@ import LandingPage from '../pages/LandingPage';
 import FaxNowPage from '../pages/FaxNowPage';
 
 // Set to false to temporarily disable loading animations
-const ENABLE_LOADING_ANIMATION = true;
+const ENABLE_LOADING_ANIMATION = false;
 
 function LoadingAnimation() {
   const [isVisible, setIsVisible] = useState(true);
@@ -40,13 +40,15 @@ function LoadingAnimation() {
 }
 
 function AppWithLoading() {
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(ENABLE_LOADING_ANIMATION); // Only start loading if animation is enabled
   const [showLoading, setShowLoading] = useState(false);
   const location = useLocation();
   const [currentPath, setCurrentPath] = useState(location.pathname);
 
-  // Show loading on initial app load
+  // Show loading on initial app load - ONLY if animation is enabled
   useEffect(() => {
+    if (!ENABLE_LOADING_ANIMATION) return; // Skip if animations are disabled
+    
     const timer = setTimeout(() => {
       setIsLoading(false);
     }, 1500);
@@ -54,8 +56,10 @@ function AppWithLoading() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Show loading on route changes - prevent showing page before animation
+  // Show loading on route changes - prevent showing page before animation - ONLY if animation is enabled
   useEffect(() => {
+    if (!ENABLE_LOADING_ANIMATION) return; // Skip if animations are disabled
+    
     if (!isLoading && location.pathname !== currentPath) {
       setShowLoading(true);
       setCurrentPath(location.pathname);

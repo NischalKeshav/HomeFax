@@ -11,16 +11,21 @@ import PropertyPage from './pages/PropertyPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import LoadingAnimation from './components/LoadingAnimation';
 
+// Set to false to temporarily disable loading animations
+const ENABLE_LOADING_ANIMATION = false;
+
 function AppContent() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [currentPath, setCurrentPath] = useState('/');
   const location = useLocation();
 
   useEffect(() => {
-    // Only show transition if path actually changed
-    if (location.pathname !== currentPath) {
+    // Only show transition if path actually changed AND animations are enabled
+    if (ENABLE_LOADING_ANIMATION && location.pathname !== currentPath) {
       setIsTransitioning(true);
       setCurrentPath(location.pathname);
+    } else if (!ENABLE_LOADING_ANIMATION) {
+      setCurrentPath(location.pathname); // Still update currentPath without animation
     }
   }, [location.pathname, currentPath]);
 
@@ -28,7 +33,7 @@ function AppContent() {
     setIsTransitioning(false);
   };
 
-  if (isTransitioning) {
+  if (ENABLE_LOADING_ANIMATION && isTransitioning) {
     return <LoadingAnimation onComplete={handleTransitionComplete} />;
   }
 
