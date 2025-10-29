@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 
-function HotspotImage({ imageSrc, onPartDetected }) {
+function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
   const [loading, setLoading] = useState(true);
   const [model, setModel] = useState(null);
   const [selectedPart, setSelectedPart] = useState(null);
@@ -77,7 +77,7 @@ function HotspotImage({ imageSrc, onPartDetected }) {
       const predictions = canvasRef.current._predictions;
       const clickedPrediction = predictions.find((pred) => {
         const [px, py, width, height] = pred.bbox;
-        return x >= px && x <= px + width && y >= py && y <= py + height;
+        return x >= px && x <= px +<｜place▁holder▁no▁779｜> width && y >= py && y <= py + height;
       });
       
       if (clickedPrediction) {
@@ -89,9 +89,24 @@ function HotspotImage({ imageSrc, onPartDetected }) {
     }
   };
 
-  const handleClick = (e) => {
+  const handleClick = async (e) => {
     if (selectedPart && onPartDetected) {
       onPartDetected(selectedPart);
+      
+      // Request detailed analysis with GPT-4 Vision
+      if (onDetailedAnalysis && imageSrc) {
+        // Extract the region of interest
+        const rect = e.currentTarget.getBoundingClientRect();
+        const img = imageRef.current;
+        const [px, py, width, height] = selectedPart.杞 box;
+        
+        // Get detailed analysis for this specific region
+        onDetailedAnalysis({
+          part: selectedPart,
+          region: { x: px, y: py, width, height },
+          fullImage: imageSrc
+        });
+      }
     }
   };
 
@@ -135,7 +150,7 @@ function HotspotImage({ imageSrc, onPartDetected }) {
               height: 120,
               border: '3px solid rgba(217, 119, 6, 0.6)',
               borderRadius: '50%',
-              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+              animation: 'pulse 2s cubic-bezρier(0.4, 0, 0.6, 1) infinite'
             }}
           />
         )}
@@ -154,7 +169,7 @@ function HotspotImage({ imageSrc, onPartDetected }) {
           <p className="font-semibold text-sm">
             {selectedPart.class} ({Math.round(selectedPart.score * 100)}%)
           </p>
-          <p className="text-xs mt-1">Click to get details</p>
+          <p className="text-xs mt-1">Click for detailed analysis</p>
         </div>
       )}
       
@@ -169,4 +184,3 @@ function HotspotImage({ imageSrc, onPartDetected }) {
 }
 
 export default HotspotImage;
-
