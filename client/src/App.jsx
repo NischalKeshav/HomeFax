@@ -9,6 +9,8 @@ import ContractorDashboard from './pages/ContractorDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import PropertyPage from './pages/PropertyPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
+import AIImageRecognition from './pages/AIImageRecognition';
+import RoomPartsInventory from './pages/RoomPartsInventory';
 import LoadingAnimation from './components/LoadingAnimation';
 
 // Set to false to temporarily disable loading animations
@@ -47,6 +49,8 @@ function AppContent() {
       <Route path="/dashboard/contractor" element={<ContractorDashboard />} />
       <Route path="/dashboard/admin" element={<AdminDashboard />} />
       <Route path="/property/:propertyId" element={<PropertyPage />} />
+      <Route path="/property/:propertyId/ai-recognition" element={<AIImageRecognition />} />
+      <Route path="/property/:propertyId/rooms" element={<RoomPartsInventory />} />
       <Route path="/project/:projectId" element={<ProjectDetailPage />} />
     </Routes>
   );

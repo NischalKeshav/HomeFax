@@ -256,7 +256,7 @@ function PropertyPage() {
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8 px-8">
-          {['overview', 'active', 'tasks', 'history', 'parts', 'maintenance', 'models', 'financials'].map((tab) => (
+          {['overview', 'active', 'tasks', 'history', 'parts', 'rooms', 'maintenance', 'models', 'financials', 'ai-recognition'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -1025,6 +1025,57 @@ function PropertyPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Rooms Tab */}
+        {activeTab === 'rooms' && (
+          <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-black">Room-by-Room Parts Inventory</h2>
+              <button
+                onClick={() => navigate(`/property/${propertyId}/rooms`)}
+                className="bg-amber-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
+              >
+                View Full Room Inventory
+              </button>
+            </div>
+            <p className="text-gray-600 mb-4">Parts organized by room for easy navigation</p>
+            <div className="text-center py-12">
+              <p className="text-gray-500">Click above to view the complete room-based inventory</p>
+            </div>
+          </div>
+        )}
+
+        {/* AI Recognition Tab */}
+        {activeTab === 'ai-recognition' && (
+          <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-black">AI Image Recognition</h2>
+              <button
+                onClick={() => navigate(`/property/${propertyId}/ai-recognition`)}
+                className="bg-amber-800 text-white px-6 py-2 rounded-lg font-semibold hover:bg-amber-900 transition-colors"
+              >
+                Launch AI Recognition
+              </button>
+            </div>
+            <div className="mb-6">
+              <p className="text-gray-600 mb-4">Upload images to identify materials, fixtures, and components in your property.</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">📸 Materials</h3>
+                  <p className="text-sm text-gray-600">Identify paint, sheetrock, wood types, finishes, and more</p>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">🔌 Fixtures</h3>
+                  <p className="text-sm text-gray-600">Recognize outlets, switches, lighting, plumbing fixtures</p>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">🛠️ Components</h3>
+                  <p className="text-sm text-gray-600">Identify HVAC, appliances, windows, doors, and more</p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
