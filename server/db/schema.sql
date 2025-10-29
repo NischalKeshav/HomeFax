@@ -43,6 +43,29 @@ CREATE TABLE properties (
   connected_utilities JSONB, -- { "internet": true, "power": "Line-45A", "water": "WL-102", "gas": "GL-56" }
   blueprints TEXT[], -- file URLs
   photos TEXT[],
+  -- Detailed property information
+  beds INT,
+  baths DECIMAL(3,1),
+  sqft INT,
+  lot_size DECIMAL(10,2),
+  school_district TEXT,
+  fireplaces INT,
+  levels INT,
+  rooms INT,
+  builder_name TEXT,
+  builder_contact TEXT,
+  builder_url TEXT,
+  subdivision TEXT,
+  google_maps_url TEXT,
+  poa_fees DECIMAL(10,2),
+  taxes DECIMAL(10,2),
+  homeowners_insurance DECIMAL(10,2),
+  cooking_range_details JSONB,
+  fireplace_details JSONB,
+  living_areas JSONB,
+  floor_coverings JSONB,
+  additive_items JSONB,
+  outbuildings_yard JSONB,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
