@@ -751,7 +751,57 @@ function PropertyPage() {
               </div>
             )}
 
-            {(!property.models3D || property.models3D.length === 0) && (!property.blueprints || property.blueprints.length === 0) && (
+            {/* Additional Documents for 6000 SW Broadway - Topology, Easement, Zoning */}
+            {property?.address?.toLowerCase().includes('broadway') && (
+              <div className="mt-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Topography & Land Documents</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Topology Document */}
+                  <div className="p-4 border-2 border-amber-800 rounded-lg hover:border-amber-900 transition-colors cursor-pointer">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-8 h-8 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                        </svg>
+                      </div>
+                      <h4 className="font-semibold text-gray-900">Topology Map</h4>
+                      <p className="text-sm text-gray-600">Topographical Survey</p>
+                      <p className="text-xs text-gray-500 mt-2">Site elevation & grading</p>
+                    </div>
+                  </div>
+
+                  {/* Easement Lines Document */}
+                  <div className="p-4 border-2 border-amber-800 rounded-lg hover:border-amber-900 transition-colors cursor-pointer">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-8 h-8 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </div>
+                      <h4 className="font-semibold text-gray-900">Easement Lines</h4>
+                      <p className="text-sm text-gray-600">Utility Easements</p>
+                      <p className="text-xs text-gray-500 mt-2">Right-of-way & utility access</p>
+                    </div>
+                  </div>
+
+                  {/* Zoning Document */}
+                  <div className="p-4 border-2 border-amber-800 rounded-lg hover:border-amber-900 transition-colors cursor-pointer">
+                    <div className="text-center">
+                      <div className="w-16 h-16 bg-amber-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <svg className="w-8 h-8 text-amber-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                        </svg>
+                      </div>
+                      <h4 className="font-semibold text-gray-900">Zoning Document</h4>
+                      <p className="text-sm text-gray-600">Property Zoning Map</p>
+                      <p className="text-xs text-gray-500 mt-2">Land use & zoning regulations</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {(!property.models3D || property.models3D.length === 0) && (!property.blueprints || property.blueprints.length === 0) && !property?.address?.toLowerCase().includes('broadway') && (
               <p className="text-gray-500">No 3D models or blueprints available</p>
             )}
           </div>
