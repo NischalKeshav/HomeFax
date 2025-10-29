@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import HotspotImage from '../components/HotspotImage';
 
 const API_BASE_URL = 'http://localhost:3001/api';
 
@@ -9,6 +10,8 @@ function AIImageRecognition() {
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(null);
   const [results, setResults] = useState(null);
+  const [clickedPart, setClickedPart] = useState(null);
+  const [showPartDetails, setShowPartDetails] = useState(false);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -20,25 +23,11 @@ function AIImageRecognition() {
       setPreview(reader.result);
     };
     reader.readAsDataURL(file);
+  };
 
-    // TODO: Upload to server and run AI recognition
-    setUploading(true);
-    
-    // For now, show a placeholder response
-    setTimeout(() => {
-      setResults({
-        materials: [
-          { name: 'Sheetrock', confidence: 0.95, description: 'Standard 1/2 inch sheetrock, likely installed 2017' },
-          { name: 'Paint', confidence: 0.92, color: 'Eggshell White', manufacturer: 'Benjamin Moore' },
-          { name: 'Wood Trim', confidence: 0.88, type: 'Pine', finish: 'Satin Polyurethane' }
-        ],
-        fixtures: [
-          { name: 'Wall Outlet', confidence: 0.98, type: 'GFCI', standard: 'NEC 2020' },
-          { name: 'Light Switch', confidence: 0.95, type: 'Standard Toggle', brand: 'Leviton' }
-        ]
-      });
-      setUploading(false);
-    }, 2000);
+  const handlePartDetection = (part) => {
+    setClickedPart(part);
+    setShowPartDetails(true);
   };
 
   return (
@@ -67,20 +56,34 @@ function AIImageRecognition() {
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
             {preview ? (
               <div>
-                <img src={preview} alt="Preview" className="max-w-full max-h-96 mx-auto mb-4" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload"
+                <p className="text-sm text-gray-600 mb-4">
+                  Hover over detected objects to see details. Click on any part to get more information.
+                </p>
+                <HotspotImage 
+                  imageSrc={preview} 
+                  onPartDetected={handlePartDetection}
                 />
-                <label
-                  htmlFor="image-upload"
-                  className="bg-amber-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-amber-900 transition-colors cursor-pointer inline-block"
-                >
-                  Change Image
-                </label>
+                <div className="mt-4 flex gap-4 justify-center">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                    id="image-upload"
+                  />
+                  <label
+                    htmlFor="image-upload"
+                    className="bg-amber-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-amber-900 transition-colors cursor-pointer inline-block"
+                  >
+                    Change Image
+                  </label>
+                  <button
+                    onClick={() => setShowPartDetails(false)}
+                    className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors"
+                  >
+                    Clear Details
+                  </button>
+                </div>
               </div>
             ) : (
               <div>
@@ -105,13 +108,38 @@ function AIImageRecognition() {
             )}
           </div>
 
-          {uploading && (
-            <div className="mt-6 text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-amber-800"></div>
-              <p className="text-gray-600 mt-2">Analyzing image...</p>
-            </div>
-          )}
         </div>
+
+        {/* Clicked Part Details */}
+        {showPartDetails && clickedPart && (
+          <div className="bg-white border-2 border-amber-800 rounded-lg shadow-lg p-8 mb-8">
+            <h3 className="text-2xl font-bold text-black mb-6">Detected Part Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-xl font-semibold text-gray-900 mb-4">{clickedPart.class}</h4>
+                <p className="text-gray-600 mb-4">
+                  Confidence: <span className="font-semibold text-amber-800">{Math.round(clickedPart.score * 100)}%</span>
+                </p>
+                <div className="text-sm text-gray-600">
+                  <p className="mb-2"><strong>Bounding Box:</strong></p>
+                  <p>X: {Math.round(clickedPart.bbox[0])}px</p>
+                  <p>Y: {Math.round(clickedPart.bbox[1])}px</p>
+                  <p>Width: {Math.round(clickedPart.bbox[2])}px</p>
+                  <p>Height: {Math.round(clickedPart.bbox[3])}px</p>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <h5 className="font-semibold text-gray-900 mb-3">Additional Information</h5>
+                <p className="text-sm text-gray-600 mb-2">
+                  This AI-powered detection uses TensorFlow.js and the COCO-SSD model to identify common household objects and fixtures.
+                </p>
+                <p className="text-sm text-gray-600">
+                  The model can detect up to 80 different object categories including furniture, appliances, and building materials.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Results */}
         {results && (
