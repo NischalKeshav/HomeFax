@@ -226,6 +226,44 @@ function FaxNowPage() {
               />
             </div>
             
+            {/* Rental/For Sale Banner */}
+            {selectedProperty.is_for_rent && selectedProperty.property_type === 'rental' && (
+              <div className="mb-6 bg-amber-100 border-2 border-amber-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xl font-bold text-amber-900">Available for Rent</p>
+                    {selectedProperty.rent_amount && (
+                      <p className="text-2xl font-bold text-amber-800">${selectedProperty.rent_amount.toLocaleString()}/month</p>
+                    )}
+                  </div>
+                  <button className="bg-amber-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-amber-900 transition-colors">
+                    Contact Owner
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {selectedProperty.is_for_sale && (
+              <div className="mb-6 bg-blue-100 border-2 border-blue-800 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xl font-bold text-blue-900">For Sale</p>
+                    {selectedProperty.sale_price && (
+                      <p className="text-2xl font-bold text-blue-800">${selectedProperty.sale_price.toLocaleString()}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="bg-blue-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-900 transition-colors">
+                      Schedule Viewing
+                    </button>
+                    <button className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors">
+                      Contact Realtor (Coming Soon)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
@@ -247,6 +285,35 @@ function FaxNowPage() {
                   <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Zoning</label>
                   <p className="text-lg text-gray-900">{selectedProperty.zoning}</p>
                 </div>
+
+                {/* Additional Property Details */}
+                {selectedProperty.beds && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Bedrooms</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.beds}</p>
+                  </div>
+                )}
+
+                {selectedProperty.baths && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Bathrooms</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.baths}</p>
+                  </div>
+                )}
+
+                {selectedProperty.sqft && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Square Feet</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.sqft.toLocaleString()} sq ft</p>
+                  </div>
+                )}
+
+                {selectedProperty.lot_size && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Lot Size</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.lot_size} acres</p>
+                  </div>
+                )}
               </div>
               
               <div className="space-y-4">
@@ -256,25 +323,131 @@ function FaxNowPage() {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Completion</label>
-                  <p className="text-lg text-gray-900">{selectedProperty.percent_complete}%</p>
+                  <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Property Type</label>
+                  <div className="flex gap-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedProperty.property_type === 'rental' 
+                        ? 'bg-amber-200 text-amber-800' 
+                        : 'bg-gray-200 text-gray-800'
+                    }`}>
+                      {selectedProperty.property_type === 'rental' ? 'Rental Property' : 'Primary Residence'}
+                    </span>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      selectedProperty.property_category === 'commercial' 
+                        ? 'bg-blue-200 text-blue-800'
+                        : selectedProperty.property_category === 'mixed_use'
+                        ? 'bg-purple-200 text-purple-800'
+                        : 'bg-green-200 text-green-800'
+                    }`}>
+                      {selectedProperty.property_category === 'commercial' ? 'Commercial' : 
+                       selectedProperty.property_category === 'mixed_use' ? 'Mixed Use' : 'Residential'}
+                    </span>
+                  </div>
                 </div>
+
+                {selectedProperty.school_district && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">School District</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.school_district}</p>
+                  </div>
+                )}
+
+                {selectedProperty.subdivision && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Subdivision</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.subdivision}</p>
+                  </div>
+                )}
+
+                {selectedProperty.builder_name && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Builder</label>
+                    <p className="text-lg text-gray-900">{selectedProperty.builder_name}</p>
+                    {selectedProperty.builder_url && (
+                      <a href={selectedProperty.builder_url} target="_blank" rel="noopener noreferrer" className="text-amber-800 hover:underline text-sm">
+                        Visit Builder Website
+                      </a>
+                    )}
+                  </div>
+                )}
                 
                 <div>
                   <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Owner</label>
                   <p className="text-lg text-gray-900">{selectedProperty.owner_name || 'Private'}</p>
                 </div>
-                
-                <div>
-                  <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Connected Utilities</label>
-                  <div className="text-lg text-gray-900">
-                    {selectedProperty.connected_utilities && Object.entries(selectedProperty.connected_utilities).map(([key, value]) => (
-                      <div key={key} className="flex justify-between">
-                        <span className="capitalize">{key}:</span>
-                        <span>{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}</span>
-                      </div>
-                    ))}
-                  </div>
+              </div>
+            </div>
+
+            {/* Financial Information */}
+            {(selectedProperty.total_appraised_value || selectedProperty.taxes || selectedProperty.homeowners_insurance) && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-2xl font-bold text-black mb-4">Financial Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {selectedProperty.total_appraised_value && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Appraised Value</label>
+                      <p className="text-2xl font-bold text-amber-800">${selectedProperty.total_appraised_value.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {selectedProperty.taxes && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Annual Taxes</label>
+                      <p className="text-2xl font-bold text-gray-900">${selectedProperty.taxes.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {selectedProperty.homeowners_insurance && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Home Insurance</label>
+                      <p className="text-2xl font-bold text-gray-900">${selectedProperty.homeowners_insurance.toLocaleString()}/yr</p>
+                    </div>
+                  )}
+                  {selectedProperty.poa_fees && (
+                    <div className="md:col-span-3">
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">POA/HOA Fees</label>
+                      <p className="text-lg text-gray-900">${selectedProperty.poa_fees.toLocaleString()}/month (${(selectedProperty.poa_fees * 12).toLocaleString()}/year)</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Sales History (If Available) */}
+            {selectedProperty.sales_history && selectedProperty.sales_history.length > 0 && (
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <h3 className="text-2xl font-bold text-black mb-4">Sales History</h3>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date Sold</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deed Type</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {selectedProperty.sales_history.map((sale, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-3 text-sm text-gray-900">{new Date(sale.sold).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{sale.price ? `$${sale.price.toLocaleString()}` : 'N/A'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{sale.deed_type}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            
+            <div className="mt-8 pt-6 border-t border-gray-200">
+              <div>
+                <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Connected Utilities</label>
+                <div className="text-lg text-gray-900 grid grid-cols-2 gap-2">
+                  {selectedProperty.connected_utilities && Object.entries(selectedProperty.connected_utilities).map(([key, value]) => (
+                    <div key={key} className="flex justify-between">
+                      <span className="capitalize">{key}:</span>
+                      <span>{typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
