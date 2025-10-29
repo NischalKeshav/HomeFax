@@ -4,6 +4,7 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid'); // For generating UUIDs
+const { analyzePropertyImage } = require('./ai-analyzer');
 
 const app = express();
 const port = 3001;
@@ -972,6 +973,23 @@ app.put('/api/maintenance-tasks/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating maintenance task:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/ai-analyze - Analyze property image with OpenAI
+app.post('/api/ai-analyze', async (req, res) => {
+  try {
+    const { imageBase64, detectedObject } = req.body;
+
+    if (!imageBase64) {
+      return res.status(400).json({ error: 'Image data is required' });
+    }
+
+    const analysis = await analyzePropertyImage(imageBase64, detectedObject);
+    res.json({ analysis });
+  } catch (error) {
+    console.error('Error analyzing image:', error);
+    res.status(500).json({ error: 'Failed to analyze image' });
   }
 });
 
