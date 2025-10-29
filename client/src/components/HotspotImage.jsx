@@ -12,7 +12,6 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    // Load the COCO-SSD model
     const loadModel = async () => {
       try {
         const loadedModel = await cocoSsd.load();
@@ -27,7 +26,6 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
   }, []);
 
   useEffect(() => {
-    // Run detection when image loads
     if (imageSrc && model && imageRef.current) {
       detectObjects();
     }
@@ -38,21 +36,18 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
 
     const predictions = await model.detect(imageRef.current);
     
-    // Draw bounding boxes and store detection data
     const ctx = canvasRef.current.getContext('2d');
     const img = imageRef.current;
     
     canvasRef.current.width = img.width;
     canvasRef.current.height = img.height;
     
-    // Draw all detected objects
     predictions.forEach((prediction) => {
       const [x, y, width, height] = prediction.bbox;
       ctx.strokeStyle = 'rgba(217, 119, 6, 0.8)';
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, width, height);
       
-      // Draw label
       ctx.fillStyle = 'rgba(217, 119, 6, 0.9)';
       ctx.font = '14px sans-serif';
       ctx.fillText(
@@ -62,7 +57,6 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
       );
     });
     
-    // Store predictions for click detection
     canvasRef.current._predictions = predictions;
   };
 
@@ -72,12 +66,11 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
     const y = e.clientY - rect.top;
     setCursorPos({ x, y });
     
-    // Check if cursor is over a detected object
     if (canvasRef.current?._predictions) {
       const predictions = canvasRef.current._predictions;
       const clickedPrediction = predictions.find((pred) => {
         const [px, py, width, height] = pred.bbox;
-        return x >= px && x <= px +<｜place▁holder▁no▁779｜> width && y >= py && y <= py + height;
+        return x >= px && x <= px + width && y >= py && y <= py + height;
       });
       
       if (clickedPrediction) {
@@ -93,14 +86,11 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
     if (selectedPart && onPartDetected) {
       onPartDetected(selectedPart);
       
-      // Request detailed analysis with GPT-4 Vision
       if (onDetailedAnalysis && imageSrc) {
-        // Extract the region of interest
         const rect = e.currentTarget.getBoundingClientRect();
         const img = imageRef.current;
         const [px, py, width, height] = selectedPart.bbox;
         
-        // Get detailed analysis for this specific region
         onDetailedAnalysis({
           part: selectedPart,
           region: { x: px, y: py, width, height },
@@ -139,7 +129,6 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
           className="absolute top-0 left-0 pointer-events-none"
         />
         
-        {/* Cursor indicator circle */}
         {showTooltip && (
           <div 
             className="absolute pointer-events-none"
@@ -156,7 +145,6 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
         )}
       </div>
       
-      {/* Tooltip */}
       {showTooltip && selectedPart && (
         <div 
           className="absolute bg-amber-900 text-white px-4 py-2 rounded-lg shadow-lg z-20 pointer-events-none"
