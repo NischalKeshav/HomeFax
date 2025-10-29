@@ -98,7 +98,7 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
         // Extract the region of interest
         const rect = e.currentTarget.getBoundingClientRect();
         const img = imageRef.current;
-        const [px, py, width, height] = selectedPart.杞 box;
+        const [px, py, width, height] = selectedPart.bbox;
         
         // Get detailed analysis for this specific region
         onDetailedAnalysis({
@@ -150,7 +150,7 @@ function HotspotImage({ imageSrc, onPartDetected, onDetailedAnalysis }) {
               height: 120,
               border: '3px solid rgba(217, 119, 6, 0.6)',
               borderRadius: '50%',
-              animation: 'pulse 2s cubic-bezρier(0.4, 0, 0.6, 1) infinite'
+              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
             }}
           />
         )}
