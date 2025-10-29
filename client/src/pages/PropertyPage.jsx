@@ -256,7 +256,7 @@ function PropertyPage() {
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
         <nav className="flex space-x-8 px-8">
-          {['overview', 'active', 'tasks', 'history', 'parts', 'maintenance', 'models'].map((tab) => (
+          {['overview', 'active', 'tasks', 'history', 'parts', 'maintenance', 'models', 'financials'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -328,6 +328,49 @@ function PropertyPage() {
                     <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Zoning</label>
                     <p className="text-lg text-gray-900">{property.zoning}</p>
                   </div>
+
+                  {/* Additional Property Details */}
+                  {property.beds && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Bedrooms</label>
+                      <p className="text-lg text-gray-900">{property.beds}</p>
+                    </div>
+                  )}
+
+                  {property.baths && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Bathrooms</label>
+                      <p className="text-lg text-gray-900">{property.baths}</p>
+                    </div>
+                  )}
+
+                  {property.sqft && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Square Feet</label>
+                      <p className="text-lg text-gray-900">{property.sqft.toLocaleString()} sq ft</p>
+                    </div>
+                  )}
+
+                  {property.lot_size && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Lot Size</label>
+                      <p className="text-lg text-gray-900">{property.lot_size} acres</p>
+                    </div>
+                  )}
+
+                  {property.school_district && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">School District</label>
+                      <p className="text-lg text-gray-900">{property.school_district}</p>
+                    </div>
+                  )}
+
+                  {property.subdivision && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Subdivision</label>
+                      <p className="text-lg text-gray-900">{property.subdivision}</p>
+                    </div>
+                  )}
                   
                   <div>
                     <label className="text-sm font-semibold text-gray-600 uppercase tracking-wide">Status</label>
@@ -807,25 +850,184 @@ function PropertyPage() {
           </div>
         )}
 
-        {/* Connected Utilities */}
-        <div className="mt-8 bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-black mb-6">Connected Utilities</h2>
-          
-          {property.connected_utilities ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Object.entries(property.connected_utilities).map(([key, value]) => (
-                <div key={key} className="text-center p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 capitalize">{key}</h3>
-                  <p className="text-sm text-gray-600">
-                    {typeof value === 'boolean' ? (value ? 'Connected' : 'Not Connected') : value}
-                  </p>
+        {/* Financials Tab */}
+        {activeTab === 'financials' && (
+          <div className="space-y-6">
+            {/* Valuation & Assessment */}
+            <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-black mb-6">Property Valuation & Assessment</h2>
+              
+              {property.total_appraised_value || property.land_value ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {property.land_value && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Land Value</label>
+                      <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.land_value)}</p>
+                    </div>
+                  )}
+                  {property.improvements_value && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Improvements Value</label>
+                      <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.improvements_value)}</p>
+                    </div>
+                  )}
+                  {property.total_appraised_value && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Total Appraised Value</label>
+                      <p className="text-2xl font-bold text-amber-800">{formatCurrency(property.total_appraised_value)}</p>
+                    </div>
+                  )}
+                  {property.total_assessed_value && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Total Assessed Value</label>
+                      <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.total_assessed_value)}</p>
+                    </div>
+                  )}
+                  {property.taxable_value && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Taxable Value</label>
+                      <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.taxable_value)}</p>
+                    </div>
+                  )}
+                  {property.assessment_year && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Assessment Year</label>
+                      <p className="text-2xl font-bold text-gray-900">{property.assessment_year}</p>
+                    </div>
+                  )}
                 </div>
-              ))}
+              ) : (
+                <p className="text-gray-500">Valuation information not available</p>
+              )}
             </div>
-          ) : (
-            <p className="text-gray-500">No utility information available</p>
-          )}
-        </div>
+
+            {/* Taxes & Fees */}
+            <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-black mb-6">Annual Taxes & Fees</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {property.taxes && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600">Estimated Taxes</label>
+                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.taxes)}</p>
+                    {property.millage_rate && <p className="text-sm text-gray-600">Millage: {property.millage_rate}</p>}
+                  </div>
+                )}
+                {property.poa_fees && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600">POA/HOA Fees</label>
+                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.poa_fees)}/month</p>
+                    <p className="text-sm text-gray-600">Annual: {formatCurrency(property.poa_fees * 12)}</p>
+                  </div>
+                )}
+                {property.homeowners_insurance && (
+                  <div>
+                    <label className="text-sm font-semibold text-gray-600">Homeowners Insurance</label>
+                    <p className="text-2xl font-bold text-gray-900">{formatCurrency(property.homeowners_insurance)}</p>
+                    <p className="text-sm text-gray-600">Annual premium</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sales History */}
+            {property.sales_history && property.sales_history.length > 0 && (
+              <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-black mb-6">Sales History</h2>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Filed</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sold</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grantor</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grantee</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deed Type</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {property.sales_history.map((sale, idx) => (
+                        <tr key={idx}>
+                          <td className="px-4 py-3 text-sm text-gray-900">{new Date(sale.filed).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{new Date(sale.sold).toLocaleDateString()}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{sale.price ? formatCurrency(sale.price) : '$0'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{sale.grantor}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{sale.grantee}</td>
+                          <td className="px-4 py-3 text-sm text-gray-900">{sale.deed_type}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Parcel Information */}
+            {property.parcel_number && (
+              <div className="bg-white border-2 border-gray-300 rounded-lg shadow-lg p-6">
+                <h2 className="text-2xl font-bold text-black mb-6">Parcel Details</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {property.parcel_number && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Parcel Number</label>
+                      <p className="text-lg text-gray-900">{property.parcel_number}</p>
+                    </div>
+                  )}
+                  {property.county_name && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">County</label>
+                      <p className="text-lg text-gray-900">{property.county_name}</p>
+                    </div>
+                  )}
+                  {property.total_acres && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Total Acres</label>
+                      <p className="text-lg text-gray-900">{property.total_acres} acres</p>
+                    </div>
+                  )}
+                  {property.sec_twp_rng && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Sec-Twp-Rng</label>
+                      <p className="text-lg text-gray-900">{property.sec_twp_rng}</p>
+                    </div>
+                  )}
+                  {property.lot_block && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Lot/Block</label>
+                      <p className="text-lg text-gray-900">{property.lot_block}</p>
+                    </div>
+                  )}
+                  {property.legal_description && (
+                    <div className="col-span-2">
+                      <label className="text-sm font-semibold text-gray-600">Legal Description</label>
+                      <p className="text-lg text-gray-900">{property.legal_description}</p>
+                    </div>
+                  )}
+                  {property.mailing_address && (
+                    <div className="col-span-2">
+                      <label className="text-sm font-semibold text-gray-600">Mailing Address</label>
+                      <p className="text-lg text-gray-900">{property.mailing_address}</p>
+                    </div>
+                  )}
+                  {property.homestead_parcel !== null && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Homestead Parcel</label>
+                      <p className="text-lg text-gray-900">{property.homestead_parcel ? 'Yes' : 'No'}</p>
+                    </div>
+                  )}
+                  {property.over_65 !== null && (
+                    <div>
+                      <label className="text-sm font-semibold text-gray-600">Over 65 Exemption</label>
+                      <p className="text-lg text-gray-900">{property.over_65 ? 'Yes' : 'No'}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
       </div>
     </div>
   );

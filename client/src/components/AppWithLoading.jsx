@@ -4,7 +4,7 @@ import LandingPage from '../pages/LandingPage';
 import FaxNowPage from '../pages/FaxNowPage';
 
 // Set to false to temporarily disable loading animations
-const ENABLE_LOADING_ANIMATION = false;
+const ENABLE_LOADING_ANIMATION = true;
 
 function LoadingAnimation() {
   const [isVisible, setIsVisible] = useState(true);
